@@ -17,6 +17,14 @@ const app = express();
 // Middleware to parse incoming request bodies in JSON format
 app.use(bodyParser.json());
 
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+  })
+);
+
+app.options("*", cors()); // Allow all preflight requests
+
 // API routes
 app.use("/api/employees", require("./routes/employeeRoutes")); // Employee routes
 app.use("/api/tiffin", require("./routes/tiffinRoutes")); // Tiffin routes
