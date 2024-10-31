@@ -10,6 +10,8 @@ exports.saveTiffinSelection = async (req, res) => {
 
   try {
     const selectedDate = new Date(date);
+    const endDate = new Date(selectedDate);
+    endDate.setHours(endDate.getHours() + 24); // Add 24 hours to the selected date
 
     // Step 1: Validate that the employee exists
     const employee = await Employee.findOne({
@@ -23,10 +25,20 @@ exports.saveTiffinSelection = async (req, res) => {
     }
 
     // Step 2: Validate that the vegetable exists for the selected date
-    const vegetable = await Vegetable.findOne({
-      _id: vegetableId, // Check that the provided vegetable ID exists
-      date: selectedDate, // Check that the vegetable is available on the provided date
+    const vegetables = await Vegetable.findOne({
+      // _id: vegetableId, // Check that the provided vegetable ID exists
+      date: { $gte: selectedDate, $lt: endDate }, // Check vegetable availability in the 24-hour range
     });
+
+    if (!vegetables) {
+      return res
+        .status(400)
+        .json({ error: "No vegetable added for this date." });
+    }
+
+    const vegetable = vegetables?.vegetables?.find(
+      (veggie) => veggie?._id == vegetableId
+    );
 
     if (!vegetable) {
       return res
@@ -45,7 +57,9 @@ exports.saveTiffinSelection = async (req, res) => {
     await selection.save();
     res.json({ message: "Tiffin selection saved successfully!" });
   } catch (error) {
-    res.status(500).json({ error: "Server Error" });
+    console.log("error::", error);
+
+    res.status(500).json({ error: `Server Error: ${error}` });
   }
 };
 
