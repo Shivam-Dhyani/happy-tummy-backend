@@ -6,7 +6,8 @@ const Employee = require("../models/Employee");
 
 // Controller to save tiffin selection
 exports.saveTiffinSelection = async (req, res) => {
-  const { employeeId, tiffinType, vegetableId, date } = req.body;
+  const { employeeId, tiffinType, vegetableDateId, vegetableId, date } =
+    req.body;
 
   try {
     const selectedDate = new Date(date);
@@ -51,6 +52,7 @@ exports.saveTiffinSelection = async (req, res) => {
       employeeId,
       tiffinType,
       vegetableId, // Store the vegetable ID
+      availableVegetablesId: vegetableDateId, // Store the availableVegetables ID
       date: selectedDate,
     });
 
@@ -70,51 +72,55 @@ exports.getTiffinSelections = async (req, res) => {
   try {
     let selections;
 
-    // If both start and end dates are provided, find selections within the range
-    if (start && end) {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
+    // Convert query dates to Date objects
+    const startDate = start ? new Date(start) : null;
+    const endDate = end ? new Date(end) : null;
 
+    // Query for selections based on date range or specific dates
+    if (startDate && endDate) {
       selections = await TiffinSelection.find({
         date: { $gte: startDate, $lte: endDate },
       })
         .populate("employeeId", "name") // Populate employee name
-        .populate("vegetableId", "name") // Populate vegetable name
-        .populate("vegetableId", "price"); // Populate vegetable price
-
-      // If only the start date is provided, find selections for that specific date
-    } else if (start) {
-      const startDate = new Date(start);
+        .populate("availableVegetablesId", "date vegetables"); // Populate available vegetables and their date
+    } else if (startDate) {
       const endOfDay = new Date(startDate);
-      endOfDay.setHours(23, 59, 59, 999); // Include the entire day
-
+      endOfDay.setHours(23, 59, 59, 999);
       selections = await TiffinSelection.find({
         date: { $gte: startDate, $lte: endOfDay },
       })
-        .populate("employeeId", "name") // Populate employee name
-        .populate("vegetableId", "name") // Populate vegetable name
-        .populate("vegetableId", "price"); // Populate vegetable price
-
-      // If only the end date is provided, find selections for that specific date
-    } else if (end) {
-      const endDate = new Date(end);
+        .populate("employeeId", "name")
+        .populate("availableVegetablesId", "date vegetables");
+    } else if (endDate) {
       const endOfDay = new Date(endDate);
-      endOfDay.setHours(23, 59, 59, 999); // Include the entire day
-
+      endOfDay.setHours(23, 59, 59, 999);
       selections = await TiffinSelection.find({
         date: { $gte: endDate, $lte: endOfDay },
       })
-        .populate("employeeId", "name") // Populate employee name
-        .populate("vegetableId", "name") // Populate vegetable name
-        .populate("vegetableId", "price"); // Populate vegetable price
+        .populate("employeeId", "name")
+        .populate("availableVegetablesId", "date vegetables");
     } else {
       return res
         .status(400)
         .json({ error: "Please provide at least one date" });
     }
 
-    res.json(selections);
+    // Attach specific vegetable details to each tiffin selection
+    const selectionsWithVegetableDetails = selections.map((selection) => {
+      const { availableVegetablesId, vegetableId } = selection;
+      const selectedVegetable = availableVegetablesId?.vegetables.find(
+        (veg) => veg._id?.toString() === vegetableId?.toString()
+      );
+
+      return {
+        ...selection?._doc,
+        vegetable: selectedVegetable, // Attach specific vegetable details
+      };
+    });
+
+    res.json(selectionsWithVegetableDetails);
   } catch (error) {
+    console.error("Error fetching tiffin selections:", error);
     res.status(500).json({ error: "Server Error" });
   }
 };

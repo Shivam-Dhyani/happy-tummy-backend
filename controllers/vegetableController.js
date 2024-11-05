@@ -1,23 +1,3 @@
-// const Vegetable = require("../models/Vegetable");
-
-// // Controller to add vegetables for a specific date
-// exports.addVegetables = async (req, res) => {
-//   const { name, price, date } = req.body;
-
-//   try {
-//     const vegetable = new Vegetable({
-//       name,
-//       price,
-//       date: new Date(date),
-//     });
-
-//     await vegetable.save();
-//     res.json({ message: "Vegetable added successfully!" });
-//   } catch (error) {
-//     res.status(500).json({ error: "Server Error" });
-//   }
-// };
-
 const AvailableVegetables = require("../models/Vegetable");
 
 // Controller to add multiple vegetables for a specific date
@@ -29,7 +9,6 @@ exports.addVegetables = async (req, res) => {
     let availableVegetables = await AvailableVegetables.findOne({
       date: new Date(date),
     });
-
     if (availableVegetables) {
       // If the document exists, append new vegetables to the existing array
       availableVegetables.vegetables.push(...vegetables);
