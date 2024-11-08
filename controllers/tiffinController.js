@@ -59,7 +59,7 @@ exports.saveTiffinSelection = async (req, res) => {
     await selection.save();
     res.json({ message: "Tiffin selection saved successfully!" });
   } catch (error) {
-    console.log("error::", error);
+    console.log("Save Tiffin API error::", error);
 
     res.status(500).json({ error: `Server Error: ${error}` });
   }
@@ -69,41 +69,31 @@ exports.saveTiffinSelection = async (req, res) => {
 exports.getTiffinSelections = async (req, res) => {
   const { start, end } = req.query; // Get start and end dates from query params
 
+  if (!start) {
+    return res
+      .status(400)
+      .json({ error: "Please provide at least a start date1" });
+  }
+
   try {
     let selections;
 
     // Convert query dates to Date objects
     const startDate = start ? new Date(start) : null;
-    const endDate = end ? new Date(end) : null;
+    let endDate = end ? new Date(end) : null;
+
+    // If only start date is provided, set end date to 24 hours later
+    if (startDate && !endDate) {
+      endDate = new Date(startDate);
+      endDate.setUTCHours(endDate.getUTCHours() + 24); // Set end date to 24 hours after start date
+    }
 
     // Query for selections based on date range or specific dates
-    if (startDate && endDate) {
-      selections = await TiffinSelection.find({
-        date: { $gte: startDate, $lte: endDate },
-      })
-        .populate("employeeId", "name") // Populate employee name
-        .populate("availableVegetablesId", "date vegetables"); // Populate available vegetables and their date
-    } else if (startDate) {
-      const endOfDay = new Date(startDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      selections = await TiffinSelection.find({
-        date: { $gte: startDate, $lte: endOfDay },
-      })
-        .populate("employeeId", "name")
-        .populate("availableVegetablesId", "date vegetables");
-    } else if (endDate) {
-      const endOfDay = new Date(endDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      selections = await TiffinSelection.find({
-        date: { $gte: endDate, $lte: endOfDay },
-      })
-        .populate("employeeId", "name")
-        .populate("availableVegetablesId", "date vegetables");
-    } else {
-      return res
-        .status(400)
-        .json({ error: "Please provide at least one date" });
-    }
+    selections = await TiffinSelection.find({
+      date: { $gte: startDate, $lt: endDate },
+    })
+      .populate("employeeId", "name") // Populate employee name
+      .populate("availableVegetablesId", "date vegetables"); // Populate available vegetables and their date
 
     // Attach specific vegetable details to each tiffin selection
     const selectionsWithVegetableDetails = selections.map((selection) => {
@@ -114,7 +104,7 @@ exports.getTiffinSelections = async (req, res) => {
 
       return {
         ...selection?._doc,
-        vegetable: selectedVegetable, // Attach specific vegetable details
+        vegetableId: selectedVegetable, // Attach specific vegetable details
       };
     });
 
