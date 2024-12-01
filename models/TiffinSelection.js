@@ -10,7 +10,7 @@ const TiffinSelectionSchema = new mongoose.Schema({
   },
   tiffinType: {
     type: String,
-    enum: ["half", "full", "only-veggie"], // Employee can choose half, only-veggie or full tiffin
+    enum: ["half", "full", "only-sabji"], // Employee can choose half, only-sabji or full tiffin
     required: true,
   },
   vegetableId: {
