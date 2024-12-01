@@ -38,7 +38,7 @@ exports.saveTiffinSelection = async (req, res) => {
     }
 
     const vegetable = vegetables?.vegetables?.find(
-      (veggie) => veggie?._id == vegetableId
+      (sabji) => sabji?._id == vegetableId
     );
 
     if (!vegetable) {
