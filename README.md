@@ -1,6 +1,6 @@
 
 
-# Happy Tummy Backend [[Live Link](https://dev-happy-tummy-api.onrender.com/)]  
+# Happy Tummy Backend
 
 The **Happy Tummy Backend** is the server-side application that powers the Happy Tummy app. It provides APIs for managing tiffin orders, tracking expenses, and enabling seamless communication between employees and managers.
 
